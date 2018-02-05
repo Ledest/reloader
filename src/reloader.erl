@@ -18,6 +18,7 @@
 -export([reload_modules/1]).
 -export([reload_app/0, reload_app/1]).
 -export([update_app/0, update_app/1]).
+-export([module_status/1]).
 -record(state, {last, tref}).
 
 %% External API
@@ -101,6 +102,8 @@ update_app() -> update_app(which_applications()).
 
 update_app(App) when is_atom(App) -> {reload_app(App), update_app_key(App, vsn)};
 update_app(Apps) when is_list(Apps) -> lists:zip(reload_app(Apps), [update_app_key(App, vsn) || App <- Apps]).
+
+module_status(M) when is_atom(M) -> code:module_status(M).
 
 %% @spec all_changed() -> [atom()]
 %% @doc Return a list of beam modules that have changed.
