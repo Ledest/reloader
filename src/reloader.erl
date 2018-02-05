@@ -92,20 +92,20 @@ all_changed() ->
 %%      and does not match the on-disk beam file, returns false otherwise.
 is_changed(M) ->
     try
-        module_vsn(M:module_info()) =/= module_vsn(code:get_object_code(M))
-    catch _:_ ->
-            false
+        module_md5(M:module_info()) =/= module_md5(code:get_object_code(M))
+    catch
+        _:_ -> false
     end.
 
 %% Internal API
 
-module_vsn({M, Beam, _Fn}) ->
-    {ok, {M, Vsn}} = beam_lib:version(Beam),
-    Vsn;
-module_vsn(L) when is_list(L) ->
+module_md5({M, Beam, _Fn}) ->
+    {ok, {M, MD5}} = beam_lib:version(Beam),
+    MD5;
+module_md5(L) when is_list(L) ->
     {_, Attrs} = lists:keyfind(attributes, 1, L),
-    {_, Vsn} = lists:keyfind(vsn, 1, Attrs),
-    Vsn.
+    {_, MD5} = lists:keyfind(md5, 1, Attrs),
+    MD5.
 
 doit(From, To) ->
     [case file:read_file_info(Filename) of

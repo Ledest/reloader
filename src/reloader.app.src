@@ -1,4 +1,4 @@
 {application, reloader, [{description, "Reloader"},
-                         {vsn, "2.12.1"},
+                         {vsn, "3.0.0"},
                          {env, []},
                          {applications, [kernel, stdlib]}]}.
