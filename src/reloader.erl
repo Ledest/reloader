@@ -16,6 +16,7 @@
 -export([all_changed/0]).
 -export([is_changed/1]).
 -export([reload_modules/1]).
+-export([reload_app/0, reload_app/1]).
 -record(state, {last, tref}).
 
 %% External API
@@ -81,6 +82,19 @@ code_change(_Vsn, State, _Extra) ->
 %%      return the results of code:load_file/1.
 reload_modules(Modules) ->
     [begin code:purge(M), code:load_file(M) end || M <- Modules].
+
+reload_app() -> [{App, reload_app(App)} || {App, _, _} <- application:which_applications()].
+
+reload_app(Apps) when is_list(Apps) -> [{App, reload_app(App)} || App <- Apps];
+reload_app(App) when is_atom(App) ->
+    case application:get_key(App, modules) of
+        {ok, Ms} -> case code:modified_modules() of
+                        [_|_] = MM ->
+                            reload_modules(sets:to_list(sets:intersection(sets:from_list(Ms), sets:from_list(MM))));
+                        R -> R
+                    end;
+        R -> R
+    end.
 
 %% @spec all_changed() -> [atom()]
 %% @doc Return a list of beam modules that have changed.
