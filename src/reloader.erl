@@ -112,22 +112,9 @@ all_changed() -> code:modified_modules().
 %% @spec is_changed(atom()) -> boolean()
 %% @doc true if the loaded module is a beam with a vsn attribute
 %%      and does not match the on-disk beam file, returns false otherwise.
-is_changed(M) ->
-    try
-        module_md5(M:module_info()) =/= module_md5(code:get_object_code(M))
-    catch
-        _:_ -> false
-    end.
+is_changed(M) -> code:module_status(M) =:= modified.
 
 %% Internal API
-
-module_md5({M, Beam, _Fn}) ->
-    {ok, {M, MD5}} = beam_lib:version(Beam),
-    MD5;
-module_md5(L) when is_list(L) ->
-    {_, Attrs} = lists:keyfind(attributes, 1, L),
-    {_, MD5} = lists:keyfind(md5, 1, Attrs),
-    MD5.
 
 doit(From, To) ->
     [case file:read_file_info(Filename) of
