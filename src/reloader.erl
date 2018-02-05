@@ -84,8 +84,7 @@ reload_modules(Modules) ->
 
 %% @spec all_changed() -> [atom()]
 %% @doc Return a list of beam modules that have changed.
-all_changed() ->
-    [M || {M, Fn} <- code:all_loaded(), is_list(Fn), is_changed(M)].
+all_changed() -> code:modified_modules().
 
 %% @spec is_changed(atom()) -> boolean()
 %% @doc true if the loaded module is a beam with a vsn attribute
