@@ -17,6 +17,7 @@
 -export([is_changed/1]).
 -export([reload_modules/1]).
 -export([reload_app/0, reload_app/1]).
+-export([update_app/0, update_app/1]).
 -record(state, {last, tref}).
 
 %% External API
@@ -83,7 +84,7 @@ code_change(_Vsn, State, _Extra) ->
 reload_modules(Modules) ->
     [begin code:purge(M), code:load_file(M) end || M <- Modules].
 
-reload_app() -> [{App, reload_app(App)} || {App, _, _} <- application:which_applications()].
+reload_app() -> reload_app(which_applications()).
 
 reload_app(Apps) when is_list(Apps) -> [{App, reload_app(App)} || App <- Apps];
 reload_app(App) when is_atom(App) ->
@@ -95,6 +96,11 @@ reload_app(App) when is_atom(App) ->
                     end;
         R -> R
     end.
+
+update_app() -> update_app(which_applications()).
+
+update_app(App) when is_atom(App) -> {reload_app(App), update_app_key(App, vsn)};
+update_app(Apps) when is_list(Apps) -> lists:zip(reload_app(Apps), [update_app_key(App, vsn) || App <- Apps]).
 
 %% @spec all_changed() -> [atom()]
 %% @doc Return a list of beam modules that have changed.
@@ -165,6 +171,24 @@ reload(Module) ->
 
 stamp() ->
     erlang:localtime().
+
+update_app_key(App, K) ->
+    case file:consult(code:where_is_file(atom_to_list(App) ++ ".app")) of
+        {ok, [{application, App, New}] = A} ->
+            case application:get_all_key(App) of
+                {ok, Old} ->
+                    case {lists:keyfind(K, 1, Old), lists:keyfind(K, 1, New)} of
+                        {O, O} -> false;
+                        {O, N} ->
+                            application_controller:change_application_data(A, [{rmt, application:get_all_env(App)}]),
+                            {true, O, N}
+                    end;
+                E -> E
+            end;
+        E -> E
+    end.
+
+which_applications() -> [App || {App, _, _} <- application:which_applications()].
 
 %%
 %% Tests
