@@ -19,6 +19,7 @@
 -export([reload_app/0, reload_app/1]).
 -export([update_app/0, update_app/1]).
 -export([module_status/1]).
+-export([update_path/0, update_path/1]).
 -record(state, {last, tref}).
 
 %% External API
@@ -104,6 +105,33 @@ update_app(App) when is_atom(App) -> {reload_app(App), update_app_key(App, vsn)}
 update_app(Apps) when is_list(Apps) -> lists:zip(reload_app(Apps), [update_app_key(App, vsn) || App <- Apps]).
 
 module_status(M) when is_atom(M) -> code:module_status(M).
+
+update_path() ->
+    update_path(case os:getenv("ROOTDIR") of
+                    [_|_] = R -> [filename:join(R, "lib")];
+                    _ -> []
+                end ++
+                case os:getenv("ERL_LIBS") of
+                    [_|_] = L -> string:tokens(L, ":");
+                    _ -> []
+                end).
+
+update_path([_|_] = Ds) ->
+    DLs = lists:map(fun filename:split/1, Ds),
+    lists:foreach(fun(P) ->
+                      filelib:is_dir(P) orelse
+                          begin
+                          PL = filename:split(P),
+                          lists:last(PL) =:= "ebin" andalso
+                              begin
+                              L = length(PL) - 2,
+                              lists:any(fun(DL) -> length(DL) =:= L andalso lists:prefix(DL, PL) end,
+                                        DLs) andalso code:del_path(P)
+                              end
+                          end
+                  end, code:get_path()),
+    code:add_paths(lists:flatmap(fun(D) -> filelib:wildcard(filename:join([D, "*", "ebin"])) end, Ds));
+update_path([]) -> ok.
 
 %% @spec all_changed() -> [atom()]
 %% @doc Return a list of beam modules that have changed.
