@@ -20,6 +20,7 @@
 -export([update_app/0, update_app/1]).
 -export([module_status/1]).
 -export([update_path/0, update_path/1]).
+-export([add_path/1, add_libdir/1]).
 -record(state, {last, tref}).
 
 %% External API
@@ -132,6 +133,10 @@ update_path([_|_] = Ds) ->
                   end, code:get_path()),
     code:add_paths(lists:flatmap(fun(D) -> filelib:wildcard(filename:join([D, "*", "ebin"])) end, Ds));
 update_path([]) -> ok.
+
+add_path(G) -> code:add_paths(filelib:wildcard(G)).
+
+add_libdir(G) -> add_path(filename:join([G, "*", "ebin"])).
 
 %% @spec all_changed() -> [atom()]
 %% @doc Return a list of beam modules that have changed.
