@@ -92,11 +92,11 @@ reload_app() -> reload_app(which_applications()).
 reload_app(Apps) when is_list(Apps) -> [{App, reload_app(App)} || App <- Apps];
 reload_app(App) when is_atom(App) ->
     case application:get_key(App, modules) of
-        {ok, Ms} -> case code:modified_modules() of
-                        [_|_] = MM ->
-                            reload_modules(sets:to_list(sets:intersection(sets:from_list(Ms), sets:from_list(MM))));
-                        R -> R
-                    end;
+        {ok, Ms} ->
+            case code:modified_modules() of
+                [_|_] = MM -> reload_modules(sets:to_list(sets:intersection(sets:from_list(Ms), sets:from_list(MM))));
+                R -> R
+            end;
         R -> R
     end.
 
@@ -203,7 +203,7 @@ update_app_key(App, K) ->
                     case {lists:keyfind(K, 1, Old), lists:keyfind(K, 1, New)} of
                         {O, O} -> false;
                         {O, N} ->
-                            application_controller:change_application_data(A, [{rmt, application:get_all_env(App)}]),
+                            application_controller:change_application_data(A, [{App, application:get_all_env(App)}]),
                             {true, O, N}
                     end;
                 E -> E
